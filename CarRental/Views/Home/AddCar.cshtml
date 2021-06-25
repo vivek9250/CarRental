@@ -1,0 +1,31 @@
+﻿@{
+    @model CarRental.Models.CarViewEtity
+}
+<div class="card">
+    <div class="card-header">
+        <h4>Add Car</h4>
+    </div>
+</div>
+
+<form action="AddCar" method="post" enctype="multipart/form-data">
+    <div class="form-group">
+        <label for="TypeId">Car Type</label>
+        @Html.DropDownListFor(model => model.TypeId, ViewBag.Car_Types as SelectList, "--select--", new { @class = "form-control" })
+        @Html.ValidationMessageFor(model=>model.TypeId)
+    </div>
+    <div class="form-group">
+        <label for="price">Price</label>
+        @Html.TextBoxFor(model => model.price, new { @class = "form-control", @type = "number" })
+        @Html.ValidationMessageFor(model=>model.price)
+    </div>
+    <div class="form-group">
+        <label for="Brand">Brand</label>
+        @Html.TextBoxFor(model => model.Brand, new { @class = "form-control" })
+    </div>
+
+    <div class="form-group">
+        <label for="Photo">Photo</label>
+        <input type="file" name="Photo" />
+    </div>
+    <button type="submit" class="btn btn-primary">Add</button>
+</form>

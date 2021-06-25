@@ -1,0 +1,206 @@
+﻿@{
+    @model CarRental.Models.CarViewModel
+}
+<style>
+    div.imgexcell {
+        background: url(/ExcelButton.png) no-repeat;
+        width: 200px;
+        height: 45px;
+        float: right;
+    }
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css" integrity="sha512-aOG0c6nPNzGk+5zjwyJaoRUgCdOrfSDhmMID2u4+OIslr0GjpLKo7Xm0Ao3xmpM4T8AmIouRkqwj1nrdVsLKEQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<div class="AjaxLoader"><!-- Place at bottom of page --></div>
+<div class="modal" id="UploadModal" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog" role="document">
+        <div class="AjaxLoader"><!-- Place at bottom of page --></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Upload CAR</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            @using (Html.BeginForm("UploadCARBulk", "Home", null, FormMethod.Post, true, new { id = "UploadForm", enctype = "multipart/form-data" }))
+            {
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-sm-8">
+                            <div class="form-group">
+                                <div class="form-line" id="UploadDiv">
+                                    choose File :<input type="file" id="uploadfile" name="uploadfile" />
+                                </div>
+                                <span id="UploadFileError" style="margin-left:15px;color:red;font-weight:bold;"></span>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="form-group">
+                                <a class="download" href="@Url.Content("~/SampleBulkUploadExcel.xlsx")">
+                                    <div class="imgexcell" style="float: none;" title="Download Excell">
+                                    </div>
+                                    <p>Download Sample</p>
+                                </a>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <input type="submit" class="btn btn-primary" value="Upload" />
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            }
+
+        </div>
+    </div>
+</div>
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+
+        </div>
+        <div class="col-md-4">
+            <div class="row">
+                <div class="col-md-10">
+                    @Html.ActionLink("Add Car", "AddCar", "Home", null, new { @class = "btn btn-success", @style = "float:right" })
+                </div>
+                <div class="col-md-2">
+                    <a class="download" id="BulkUploadBtn" href="javascript:void(0);">
+                        <div class="imgexcell" style="float: none;" title="Download Excell">
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <form class="layui-form" asp-action="AddCar" data-ajax-begin="onBegin"
+          data-ajax-success="onSuccess" data-ajax="true" data-ajax-method="POST">
+        <div class="row">
+            <div class="col-md-2">
+                <div class="form-group">
+                    @Html.Label("From Date")
+                    @Html.TextBoxFor(model => model.FromDate_Search, new { @class = "datepicker form-control" })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="form-group">
+                    @Html.Label("To Date")
+                    @Html.TextBoxFor(model => model.ToDate_Search, new { @class = "datepicker form-control" })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="form-group">
+                    @Html.Label("Brand :")
+                    @Html.DropDownListFor(model => model.Brand_Search, ViewBag.Brand as SelectList, "--select--", new { @class = "form-control" })
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="form-group">
+                    <input type="submit" value="search" class="btn btn-primary" style="margin-top:30px;" />
+                </div>
+            </div>
+        </div>
+    </form>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th>Brand</th>
+                <th>Price</th>
+                <th>Photo</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Cars.Count > 0)
+            {
+                foreach (var item in Model.Cars)
+                {
+                    <tr>
+                        <td>@item.Type.Title</td>
+                        <td>@item.BRAND</td>
+                        <td>@item.Price</td>
+                        <td><img src="@item.Photo" alt="car img" style="width:100px;height:100px" /></td>
+                        <td>@Html.ActionLink("Edit", "Car_Action", "Home", new { id = item.ID })|</td>
+                        <td><a href="javascript:void(0);" data-id="@item.ID">delete</a></td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="6" style="text-align:center">
+                        No records
+                    </td>
+                </tr>
+            }
+
+        </tbody>
+    </table>
+
+</div>
+@section Scripts{
+    <script src="~/jquery-ajax-unobtrusive/jquery.unobtrusive-ajax.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script>
+        $(document).ready(function () {
+            $(".datepicker").datepicker({
+                dateFormat: 'yy-mm-dd'
+            });
+            $("#BulkUploadBtn").click(function () {
+                $('#UploadModal').modal('show');
+            });
+            $("form#UploadForm").submit(function (e) {
+                e.preventDefault();
+                let filename = $(this).find('input[type=file]').val().replace(/C:\\fakepath\\/i, '')
+                if (!filename) {
+                    $("#UploadFileError").text("please select File");
+                    return false;
+                }
+                let ValidExtension = ["XLSX","XLS"];
+                if (!ValidExtension.includes(filename.split('.').pop().toUpperCase())) {
+                    $("#UploadFileError").text("Please Select Valid File Type (Allowed :" + ValidExtension.toString() + ")");
+                    return false;
+                }
+                var formdata = new FormData($('form#UploadForm').get(0));
+                $('#UploadModal').find(".AjaxLoader").show();
+                $.ajax({
+                    url: '@Url.Action("UploadCARBulk", "Home")',
+                    type: 'POST',
+                    data: formdata,
+                    processData: false,
+                    contentType: false,
+                    success: function (data) {
+                        if (data.data.status == "0") {
+                            alert('uploaded successfully');
+                        }
+                        else {
+                            alert('An error Occured');
+                        }
+                        $('#UploadModal').find(".AjaxLoader").hide();
+                        $('#UploadModal').modal('hide');
+
+                    }
+                })
+
+            })
+            $("input[type=file]").change(function () {
+                $("#UploadFileError").empty();
+            });
+            $('.modal').on('hidden.bs.modal', function (e) {
+                $(this)
+                    .find("input,textarea,select").not('input:submit')
+                    .val('')
+                    .end()
+                $("[type=submit]").attr("disabled", false);
+                $("#UploadFileError").empty();
+            });
+        })
+        function onBegin() {
+            $(".AjaxLoader").show();
+        }
+        function onSuccess(data) {
+            $(".AjaxLoader").hide();
+        }
+    </script>
+}
