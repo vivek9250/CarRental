@@ -14,4 +14,9 @@ namespace Model.Common
         Success,
         Error
     }
+    public class DropdownResult
+    {
+        public string Key { get; set; }
+        public string Value { get; set; }
+    }
 }

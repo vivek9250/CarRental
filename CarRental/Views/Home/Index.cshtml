@@ -1,14 +1,224 @@
 ﻿
 @{
-    
+    @model CarRental.Models.Order
     ViewData["Title"] = "Home Page";
 }
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css" integrity="sha512-aOG0c6nPNzGk+5zjwyJaoRUgCdOrfSDhmMID2u4+OIslr0GjpLKo7Xm0Ao3xmpM4T8AmIouRkqwj1nrdVsLKEQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<div class="AjaxLoader"><!-- Place at bottom of page --></div>
+<div class="modal" id="CarOrderModal" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog" role="document">
+        <div class="AjaxLoader"><!-- Place at bottom of page --></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Place CAR Order</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
 
+            <div class="modal-body">
+                <form class="layui-form" asp-action="AddOrder" data-ajax-begin="onBegin"
+                      data-ajax-success="onSuccess" data-ajax="true" data-ajax-method="POST">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="CarID">CAR</label>
+                                @Html.DropDownListFor(model => model.CarID, ViewBag.Brand as SelectList, "--select--", new { @class = "form-control" })
+                                @Html.ValidationMessageFor(model => model.CarID)
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="Start_Date">Start Date</label>
+                                @Html.TextBoxFor(model => model.Start_Date, null, new { @class = "form-control datepicker" })
+                                @Html.ValidationMessageFor(model => model.Start_Date)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="End_Date">End Date</label>
+                                @Html.TextBoxFor(model => model.End_Date, null, new { @class = "form-control datepicker" })
+                                @Html.ValidationMessageFor(model => model.End_Date)
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="Pick_Location">Pick Up</label>
+                                @Html.TextBoxFor(model => model.Pick_Location, null, new { @class = "form-control" })
+                                @Html.ValidationMessageFor(model => model.Pick_Location)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="Drop_Location">Drop Up</label>
+                                @Html.TextBoxFor(model => model.Drop_Location, null, new { @class = "form-control" })
+                                @Html.ValidationMessageFor(model => model.Drop_Location)
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="Contact_No">Contact Number</label>
+                                @Html.TextBoxFor(model => model.Contact_No, null, new { @class = "form-control" })
+                                @Html.ValidationMessageFor(model => model.Contact_No)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="Contact_Person">Contact Person</label>
+                                @Html.TextBoxFor(model => model.Contact_Person, null, new { @class = "form-control" })
+                                @Html.ValidationMessageFor(model => model.Contact_Person)
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <button type="submit" style="margin-top:15%" class="btn btn-primary">Submit</button>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="container">
     <div class="row">
-        <div class="col-md-3">
-            @Html.DropDownList("Car_Type", ViewBag.Car_Types as SelectList,"--select--")
+        <div class="col-md-12">
+            <button id="btnPlace" class="btn btn-primary">Place Order</button>
+        </div>
+        <div class="col-md-12">
+            <form class="layui-form" data-ajax-update="#tbody" asp-action="Get_Order_List_Search" data-ajax-begin="onBeginSearch"
+                  data-ajax-success="onSuccessSearch"  data-ajax="true" data-ajax-method="POST">
+                <div class="row">
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            @Html.Label("Brand :")
+                            @Html.DropDownList("CarID", ViewBag.Brand as SelectList, "--select--", new { @class = "form-control",data_val=false })
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            @Html.Label("From Date")
+                            @Html.TextBox("FromDate", null, new { @class = "form-control datepicker" })
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            @Html.Label("End Date")
+                            @Html.TextBox("EndDate", null, new { @class = "form-control datepicker" })
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <input type="submit" value="search" id="btnSearchOrder" class="btn btn-primary" style="margin-top:30px;" />
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="col-md-12">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>
+                            Car Brand
+                        </th>
+                        <th>
+                            Start Date <small>(yyyy-mm-dd)</small>
+                        </th>
+                        <th>
+                            End Date <small>(yyyy-mm-dd)</small>
+                        </th>
+                        <th>
+                            Pick Up Location
+                        </th>
+                        <th>
+                            Drop Location
+                        </th>
+                        <th>
+                            Contact Person
+                        </th>
+                        <th>
+                            Contact Number
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="tbody">
+                    @await Component.InvokeAsync("OrderList")
+                </tbody>
+                </table>
 
         </div>
     </div>
 </div>
+@section Scripts{
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script>
+        $(document).ready(function () {
+            $(".datepicker").datepicker({
+                dateFormat: 'yy-mm-dd',
+                onSelect: function (dateText) {
+                    if (dateText) {
+                        $(this).valid();
+                    }
+                }
+            });
+            $("#btnPlace").click(function () {
+                $("#CarOrderModal").modal('show');
+            })
+            $('.modal').on('hidden.bs.modal', function (e) {
+                $(this)
+                    .find("input,textarea,select").not('input:submit')
+                    .val('')
+                    .end()
+                
+                $('span.field-validation-valid').empty() 
+                $("[type=submit]").attr("disabled", false);
+                $('#CarOrderModal form')[0].reset();
+            });
+            $('.modal').on('shown.bs.modal', function (e) {
+                $('span.field-validation-valid').empty() 
+            })
+
+        })
+        function onBegin() {
+            $(".AjaxLoader").show();
+        }
+        function onSuccess(data) {
+            $(".AjaxLoader").hide();
+            if (data.data.status == "0") {
+                $("#CarOrderModal").modal('hide');
+                swal({
+                    title: "Success",
+                    text: "Booking Done Successfully",
+                    type: "success",
+                },
+                    function () {
+                        $("#btnSearchOrder").trigger("click");
+                    });
+            }
+            else {
+                swal({
+                    title: "Error",
+                    text: data.data.msg,
+                    type: "error",
+                },
+                    function () {
+                    });
+            }
+            
+        }
+        function onBeginSearch() {
+            $(".AjaxLoader").show();
+        }
+        function onSuccessSearch(data) {
+            
+            $(".AjaxLoader").hide();
+        }
+
+    </script>
+}

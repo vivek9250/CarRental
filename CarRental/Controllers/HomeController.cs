@@ -31,21 +31,28 @@ namespace CarRental.Controllers
 
         public IActionResult Index()
         {
-             ServerResopnse = new CAR_BAL().Get_CarType();
+             ServerResopnse = new CAR_BAL().Get_Brand();
             if(ServerResopnse.Status==Response_Status.Success)
             {
-                ViewBag.Car_Types = new SelectList((IEnumerable<CAR_Type>)ServerResopnse.Data,"ID", "Title");
+                ViewBag.Brand = new SelectList((IEnumerable<DropdownResult>)ServerResopnse.Data, "Key", "Value");
             }
             return View();
         }
         public IActionResult CarList()
         {
             ServerResopnse = new CAR_BAL().Get_Brand();
+            CarViewModel model = new CarViewModel();
             if (ServerResopnse.Status == Response_Status.Success)
             {
-                ViewBag.Brand = new SelectList((IEnumerable<string>)ServerResopnse.Data);
-            } 
-            return View();
+                ViewBag.Brand = new SelectList((IEnumerable<DropdownResult>)ServerResopnse.Data,"Value","Value");
+            }
+            ServerResopnse = new CAR_BAL().Get_Car_List(new Car());
+            if(ServerResopnse.Status==Response_Status.Success)
+            {
+               List<Car> carlist= (List<Car>)ServerResopnse.Data;
+                model.Cars = carlist;
+            }
+            return View(model);
         }
 
         public IActionResult AddCar(int id=0)
@@ -56,6 +63,20 @@ namespace CarRental.Controllers
             if(id!=0)
             {
                 //edit part
+                model.Id = id;
+                Car dbreq = new Car
+                {
+                    BRAND = "",
+                    ID = id
+                };
+                ServerResopnse = new CAR_BAL().Get_Car_List(dbreq);
+                List<Car> carlist = (List<Car>)ServerResopnse.Data;
+                Car car = carlist.FirstOrDefault();
+                model.Brand = car.BRAND;
+                model.Id = car.ID;
+                model.PhotoFile = car.Photo;
+                model.price = car.Price;
+                model.TypeId = car.Type.ID;
             }
             else
             {
@@ -65,8 +86,27 @@ namespace CarRental.Controllers
             return View(model);
         }
         [HttpPost]
-        public async Task<IActionResult> AddCar(CarViewEtity model)
+        public async Task<IActionResult> AddCar(CarViewEtity model,string FileChanged)
         {
+            Car dbmodel = new Car
+            {
+                ID = model.Id,
+                BRAND = model.Brand,
+
+                Price = model.price,
+                Type = new CAR_Type
+                {
+                    ID = model.TypeId
+                }
+            };
+            FileChanged = FileChanged ?? "false";
+            if (model.Id!=0)
+            {
+                if(!string.Equals(FileChanged,"true",StringComparison.OrdinalIgnoreCase))
+                {
+                    dbmodel.Photo = model.PhotoFile;
+                }
+            }
             string filePath = string.Empty;
             string uploads = Path.Combine(_hostingEnvironment.WebRootPath, "uploads");
             if (model.Photo!=null && model.Photo.Length > 0)
@@ -76,28 +116,48 @@ namespace CarRental.Controllers
                 {
                     await model.Photo.CopyToAsync(fileStream);
                 }
+                dbmodel.Photo = string.Concat("uploads/", model.Photo.FileName);
             }
-            #region Add in DB
-            Car dbmodel = new Car
+            if(model.Id!=0)
             {
-                ID = model.Id,
-                BRAND = model.Brand,
-                Photo = string.Concat("uploads/", model.Photo.FileName),
-                Price = model.price,
-                Type = new CAR_Type
-                {
-                    ID = model.TypeId
-                }
-            };
-            ServerResopnse = new CAR_BAL().AddCAR_UPDATE(dbmodel,"INSERT");
-            #endregion
+                #region Update in DB
+                ServerResopnse = new CAR_BAL().AddCAR_UPDATE(dbmodel, "UPDATE");
+                #endregion
+            }
+            else
+            {
+                #region Add in DB
+                ServerResopnse = new CAR_BAL().AddCAR_UPDATE(dbmodel, "INSERT");
+                #endregion
+            }
 
+
+            if (ServerResopnse.Status == Response_Status.Success)
+            {
+                if (model.Id != 0)
+                {
+                    //edit case
+                    TempData["Stats"] = "Success";
+                    ViewBag.msg = "Record Updated Successfully";
+                }
+                else
+                {
+                    //new add
+                    TempData["Stats"] = "Success";
+                    ViewBag.msg = "Record Added Successfully";
+                }
+            }
+            else
+            {
+                TempData["Stats"] = "Error";
+                ViewBag.msg = "Something Wend Wrong";
+            }
+            
             ServerResopnse = new CAR_BAL().Get_CarType();
             ViewBag.Car_Types = new SelectList((IEnumerable<CAR_Type>)ServerResopnse.Data, "ID", "Title");
-            return View();
+            return View(model);
         }
 
-        [ValidateAntiForgeryToken]
         [HttpPost]
         public IActionResult UploadCARBulk(IFormFile uploadfile)
         {
@@ -148,6 +208,54 @@ namespace CarRental.Controllers
             
             return Json(new { data = ServerResopnse });
         }
+        public IActionResult Get_Car_List_Search(string Brand_Search, int Id)
+        {
+            Car dbreq = new Car
+            {
+                BRAND= Brand_Search,
+                ID=Id
+            };
+            ServerResopnse = new CAR_BAL().Get_Car_List(dbreq);
+            List<Car> CarList = (List<Car>)ServerResopnse.Data;
+            return PartialView("_CarList", CarList);
+        }
 
+        [HttpPost]
+        public IActionResult DeleteCAR(int Id)
+        {
+            ServerResopnse = new CAR_BAL().DeleteCAR(Id);
+            return Json(new { data = ServerResopnse });
+        }
+
+        [HttpPost]
+        public IActionResult AddOrder(Order model)
+        {
+            Order_Entity db_req = new Order_Entity
+            {
+                Car = new Car
+                {
+                    ID = Convert.ToInt32(model.CarID)
+                },
+                ContactNo = model.Contact_No,
+                CONTACT_PERSON = model.Contact_Person,
+                DROP_LOCATION = model.Drop_Location,
+                ENDDATE = model.End_Date,
+                PICK_LOCATION = model.Pick_Location,
+                STARTDATE = model.Start_Date
+            };
+            ServerResopnse = new CAR_BAL().AddOrder(db_req);
+            return Json(new {data=ServerResopnse});
+        }
+
+        public IActionResult _OrderList(OrderSearch model)
+        {
+            
+            return PartialView("_OrderList",model);
+        }
+        [HttpPost]
+        public IActionResult Get_Order_List_Search(OrderSearch model)
+        {
+            return ViewComponent("OrderList",model);
+        }
     }
 }

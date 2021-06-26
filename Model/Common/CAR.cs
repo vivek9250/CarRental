@@ -21,9 +21,9 @@ namespace Model.Common
         public string BRAND { get; set; }
         public string Photo { get; set; }
     }
-    public class Order
+    public class Order_Entity
     {
-        public Order()
+        public Order_Entity()
         {
             this.Car = new Car();
         }
@@ -35,5 +35,11 @@ namespace Model.Common
         public string ContactNo { get; set; }
         public string CONTACT_PERSON { get; set; }
         public Car Car { get; set; }
+    }
+    public class OrderSearch_entity
+    {
+        public string FromDate { get; set; }
+        public string EndDate { get; set; }
+        public string CarID { get; set; }
     }
 }

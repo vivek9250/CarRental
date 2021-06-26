@@ -1,0 +1,32 @@
+﻿@model List<Model.Common.Car>
+@if (Model != null && Model.Count > 0)
+{
+    foreach (var item in Model)
+    {
+        <tr>
+            <td>@item.Type.Title</td>
+            <td>@item.BRAND</td>
+            <td>@item.Price</td>
+            @if (!string.IsNullOrWhiteSpace(item.Photo))
+            {
+                <td><img src="@Url.Content("~/"+item.Photo)" alt="car img" style="width:100px;height:100px" /></td>
+            }
+            else
+            {
+                <td>No File</td>
+            }
+            <td>
+                @Html.ActionLink("Edit", "AddCar", "Home", new { id = item.ID })|
+                <a href="javascript:void(0);" data-id="@item.ID" class="deleteCar">delete</a>
+            </td>
+        </tr>
+    }
+}
+else
+{
+    <tr>
+        <td colspan="6" style="text-align:center">
+            No records
+        </td>
+    </tr>
+}

@@ -1,22 +1,41 @@
 ﻿@{
     @model CarRental.Models.CarViewEtity
+string DynamicText = "Add";
+    if(Model.Id!=0)
+    {
+        DynamicText = "Edit";
+    }
 }
-<div class="card">
-    <div class="card-header">
-        <h4>Add Car</h4>
+<h4 style="display:inline">@DynamicText CAR</h4>
+@Html.ActionLink("Back to list","CarList","Home",null,new {@style="float:right" })
+@if (ViewBag.msg != null)
+{
+    <div class="card">
+        <div class="card-header">
+            @if ((string)TempData["Stats"] == "Success")
+            {
+                <b style="color:forestgreen">@ViewBag.msg</b>
+            }
+            else
+            {
+                <b style="color:red">@ViewBag.msg</b>
+            }
+        </div>
     </div>
-</div>
-
+}
 <form action="AddCar" method="post" enctype="multipart/form-data">
+    @Html.HiddenFor(model=>model.Id)
+    @Html.HiddenFor(model=>model.PhotoFile)
+    @Html.Hidden("FileChanged")
     <div class="form-group">
         <label for="TypeId">Car Type</label>
         @Html.DropDownListFor(model => model.TypeId, ViewBag.Car_Types as SelectList, "--select--", new { @class = "form-control" })
-        @Html.ValidationMessageFor(model=>model.TypeId)
+        @Html.ValidationMessageFor(model => model.TypeId)
     </div>
     <div class="form-group">
         <label for="price">Price</label>
         @Html.TextBoxFor(model => model.price, new { @class = "form-control", @type = "number" })
-        @Html.ValidationMessageFor(model=>model.price)
+        @Html.ValidationMessageFor(model => model.price)
     </div>
     <div class="form-group">
         <label for="Brand">Brand</label>
@@ -25,7 +44,38 @@
 
     <div class="form-group">
         <label for="Photo">Photo</label>
+        @if (!string.IsNullOrWhiteSpace(Model.PhotoFile))
+        {
+            <a href="javascript:void();" style="float:right;padding-left:5px;" id="Delete">Delete</a>
+            <img id="PreviewImg" style="float:right;" height="100px" width="100px" src="@Url.Content("~/"+Model.PhotoFile)" alt="Loading..." />
+        }
+
         <input type="file" name="Photo" />
     </div>
-    <button type="submit" class="btn btn-primary">Add</button>
+    <button type="submit" class="btn btn-primary">@DynamicText</button>
 </form>
+@section Scripts{ 
+<script>
+    $(document).ready(function () {
+        $("[name=Photo]").change(function () {
+            if ('@Model.Id' != '0') {
+                readFile(this);
+            }
+            
+        });
+        $('#Delete').on('click', function () {
+            $("#PreviewImg").hide();
+            $("#FileChanged").val("true");
+            $(this).hide();
+        });
+    });
+    function readFile(input) {
+        if (input.files && input.files[0]) {
+            $("#FileChanged").val("true");
+        }
+        else {
+            $("#FileChanged").val("false");
+        }
+    }
+</script>
+}

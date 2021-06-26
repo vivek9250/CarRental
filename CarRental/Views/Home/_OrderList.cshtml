@@ -1,0 +1,31 @@
+﻿@model List<Model.Common.Order_Entity>
+
+@if (Model != null && Model.Count > 0)
+{
+    foreach (var item in Model)
+    {
+        <tr>
+            <td>
+            </td>
+            <td>
+            </td>
+            <td>
+            </td>
+            <td>
+            </td>
+            <td>
+            </td>
+            <td>
+            </td>
+            <td>
+            </td>
+        </tr>
+    }
+
+}
+else
+{
+    <tr>
+        <td colspan="7" style="text-align:center"> No Record found</td>
+    </tr>
+}

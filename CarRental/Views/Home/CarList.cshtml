@@ -9,7 +9,6 @@
         float: right;
     }
 </style>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css" integrity="sha512-aOG0c6nPNzGk+5zjwyJaoRUgCdOrfSDhmMID2u4+OIslr0GjpLKo7Xm0Ao3xmpM4T8AmIouRkqwj1nrdVsLKEQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 <div class="AjaxLoader"><!-- Place at bottom of page --></div>
 <div class="modal" id="UploadModal" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
     <div class="modal-dialog" role="document">
@@ -21,7 +20,7 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            @using (Html.BeginForm("UploadCARBulk", "Home", null, FormMethod.Post, true, new { id = "UploadForm", enctype = "multipart/form-data" }))
+            @using (Html.BeginForm("UploadCARBulk", "Home", null, FormMethod.Post, null, new { id = "UploadForm", enctype = "multipart/form-data" }))
             {
                 <div class="modal-body">
                     <div class="row">
@@ -73,21 +72,9 @@
             </div>
         </div>
     </div>
-    <form class="layui-form" asp-action="AddCar" data-ajax-begin="onBegin"
-          data-ajax-success="onSuccess" data-ajax="true" data-ajax-method="POST">
+    <form class="layui-form" asp-action="Get_Car_List_Search" data-ajax-begin="onBegin"
+          data-ajax-success="onSuccess" data-ajax-update="#tbody" data-ajax="true" data-ajax-method="GET">
         <div class="row">
-            <div class="col-md-2">
-                <div class="form-group">
-                    @Html.Label("From Date")
-                    @Html.TextBoxFor(model => model.FromDate_Search, new { @class = "datepicker form-control" })
-                </div>
-            </div>
-            <div class="col-md-2">
-                <div class="form-group">
-                    @Html.Label("To Date")
-                    @Html.TextBoxFor(model => model.ToDate_Search, new { @class = "datepicker form-control" })
-                </div>
-            </div>
             <div class="col-md-2">
                 <div class="form-group">
                     @Html.Label("Brand :")
@@ -96,7 +83,7 @@
             </div>
             <div class="col-md-2">
                 <div class="form-group">
-                    <input type="submit" value="search" class="btn btn-primary" style="margin-top:30px;" />
+                    <input type="submit" id="SerachCARbtn" value="search" class="btn btn-primary" style="margin-top:30px;" />
                 </div>
             </div>
         </div>
@@ -111,19 +98,28 @@
                 <th>Action</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="tbody">
             @if (Model != null && Model.Cars.Count > 0)
             {
                 foreach (var item in Model.Cars)
                 {
-                    <tr>
-                        <td>@item.Type.Title</td>
-                        <td>@item.BRAND</td>
-                        <td>@item.Price</td>
-                        <td><img src="@item.Photo" alt="car img" style="width:100px;height:100px" /></td>
-                        <td>@Html.ActionLink("Edit", "Car_Action", "Home", new { id = item.ID })|</td>
-                        <td><a href="javascript:void(0);" data-id="@item.ID">delete</a></td>
-                    </tr>
+            <tr>
+                <td>@item.Type.Title</td>
+                <td>@item.BRAND</td>
+                <td>@item.Price</td>
+                @if (!string.IsNullOrWhiteSpace(item.Photo))
+                {
+                    <td><img src="@Url.Content("~/"+item.Photo)" alt="car img" style="width:100px;height:100px" /></td>
+                }
+                else
+                {
+                    <td>No File</td>
+                }
+                <td>
+                    @Html.ActionLink("Edit", "AddCar", "Home", new { id = item.ID })|
+                <a href="javascript:void(0);" data-id="@item.ID" class="deleteCar">delete</a>
+            </td>
+            </tr>
                 }
             }
             else
@@ -140,13 +136,8 @@
 
 </div>
 @section Scripts{
-    <script src="~/jquery-ajax-unobtrusive/jquery.unobtrusive-ajax.js"></script>
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <script>
         $(document).ready(function () {
-            $(".datepicker").datepicker({
-                dateFormat: 'yy-mm-dd'
-            });
             $("#BulkUploadBtn").click(function () {
                 $('#UploadModal').modal('show');
             });
@@ -172,17 +163,26 @@
                     contentType: false,
                     success: function (data) {
                         if (data.data.status == "0") {
-                            alert('uploaded successfully');
+
+                                swal({
+                                    title: "Success",
+                                    text: "Uploaded successfully",
+                                    type: "success",
+                                    },
+                                   function() {
+                                       $("#SerachCARbtn").trigger("click");
+                                });
+
+
                         }
                         else {
-                            alert('An error Occured');
+                            swal("Error!!", "An Error has Occured", "error");
                         }
                         $('#UploadModal').find(".AjaxLoader").hide();
                         $('#UploadModal').modal('hide');
 
                     }
                 })
-
             })
             $("input[type=file]").change(function () {
                 $("#UploadFileError").empty();
@@ -195,6 +195,53 @@
                 $("[type=submit]").attr("disabled", false);
                 $("#UploadFileError").empty();
             });
+            $(document).on('click', '.deleteCar', function () {
+                let CarId = $(this).data("id")
+                swal({
+                    title: "Are you sure?",
+                    text: "Your will not be able to recover this!",
+                    type: "warning",
+                    showCancelButton: true,
+                    confirmButtonClass: "btn-danger",
+                    confirmButtonText: "Yes, delete it!",
+                    closeOnConfirm: false
+                },
+                    function (e) {
+                        if (e) {
+                            $.ajax({
+                            type: "POST",
+                            url:'@Url.Action("DeleteCAR","Home")',
+                            data: { Id: CarId  },
+                            success: function (data) {
+                                if (data.data.status == "0") {
+
+                                    swal({
+                                        title: "Success",
+                                        text: "Deleted successfully",
+                                        type: "success",
+                                    },
+                                        function () {
+                                            $("#SerachCARbtn").trigger("click");
+                                        });
+
+
+                                }
+                                else {
+                                    swal({
+                                        title: "Error",
+                                        text: data.data.msg,
+                                        type: "error",
+                                    },
+                                        function () {
+                                            $("#SerachCARbtn").trigger("click");
+                                        });
+                                }
+                            }
+                        })
+                        }
+
+                    });
+            })
         })
         function onBegin() {
             $(".AjaxLoader").show();
